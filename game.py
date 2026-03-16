@@ -41,7 +41,7 @@ class Player(GameObject):
         if y is None:
             y = HEIGHT - PLAYER_HEIGHT - 50
         
-        super().__init__(x, y, PLAYER_WIDTH, PLAYER_HEIGHT, GREEN)
+        super().__init__(x, y, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR)
         self.lives = lives
     
     def move_left(self):
@@ -78,7 +78,7 @@ class Enemy(GameObject):
         else:  # 'normal'
             width = NORMAL_ENEMY_WIDTH
             height = NORMAL_ENEMY_HEIGHT
-            color = NORMAL_ENEMY_COLOR
+            color = ENEMY_COLOR
             speed = NORMAL_ENEMY_SPEED
         
         super().__init__(x, y, width, height, color, speed)
@@ -246,40 +246,34 @@ class GameUI:
         self.timer_font = pygame.font.Font(None, 24)
         self.pause_font = pygame.font.Font(None, 72)
         self.score_font = pygame.font.Font(None, 32)
+
+    def draw_button(self, text, center_pos):
+        """Helper to draw a standardized button."""
+        button_text = self.button_font.render(text, True, TEXT_COLOR)
+        button_rect_text = button_text.get_rect(center=center_pos)
+        button_padding = 10
+        button_rect = pygame.Rect(
+            button_rect_text.left - button_padding,
+            button_rect_text.top - button_padding,
+            button_rect_text.width + 2 * button_padding,
+            button_rect_text.height + 2 * button_padding
+        )
+        pygame.draw.rect(self.window, BUTTON_COLOR, button_rect)
+        self.window.blit(button_text, button_rect_text.topleft)
+        return button_rect
     
     def draw_game_selection_screen(self):
         """Draw the game selection menu with game and high scores buttons."""
-        self.window.fill(LIGHT_BLUE)
+        self.window.fill(BG_COLOR)
         
         # Draw title
         title_text = self.title_font.render("What game do you want to play?", True, TEXT_COLOR)
         title_x = WIDTH // 2 - title_text.get_width() // 2
         self.window.blit(title_text, (title_x, 30))
         
-        # Draw "Play Game" button
-        button_padding = 10
-        play_button_text = self.game_option_font.render("Evan's Falling Game", True, TEXT_COLOR)
-        play_button_rect_text = play_button_text.get_rect(center=(WIDTH // 2, 140))
-        play_button_rect = pygame.Rect(
-            play_button_rect_text.left - button_padding,
-            play_button_rect_text.top - button_padding,
-            play_button_rect_text.width + 2 * button_padding,
-            play_button_rect_text.height + 2 * button_padding
-        )
-        pygame.draw.rect(self.window, DARK_GREEN, play_button_rect)
-        self.window.blit(play_button_text, play_button_rect_text.topleft)
-        
-        # Draw "High Scores" button
-        high_scores_text = self.game_option_font.render("High Scores", True, TEXT_COLOR)
-        high_scores_rect_text = high_scores_text.get_rect(center=(WIDTH // 2, 250))
-        high_scores_button_rect = pygame.Rect(
-            high_scores_rect_text.left - button_padding,
-            high_scores_rect_text.top - button_padding,
-            high_scores_rect_text.width + 2 * button_padding,
-            high_scores_rect_text.height + 2 * button_padding
-        )
-        pygame.draw.rect(self.window, DARK_GREEN, high_scores_button_rect)
-        self.window.blit(high_scores_text, high_scores_rect_text.topleft)
+        # Draw buttons
+        play_button_rect = self.draw_button("Evan's Falling Game", (WIDTH // 2, 140))
+        high_scores_button_rect = self.draw_button("High Scores", (WIDTH // 2, 250))
         
         pygame.display.flip()
         
@@ -287,7 +281,7 @@ class GameUI:
     
     def draw_game_screen(self, game_state):
         """Draw the main game screen."""
-        self.window.fill(LIGHT_BLUE)
+        self.window.fill(BG_COLOR)
         
         # Draw player
         game_state.player.draw(self.window)
@@ -324,27 +318,15 @@ class GameUI:
     
     def draw_game_over_screen(self):
         """Draw the game over screen and return play again and main menu button rects."""
-        self.window.fill(LIGHT_BLUE)
+        self.window.fill(BG_COLOR)
         
-        game_over_text = self.game_over_font.render("Game Over", True, RED)
+        game_over_text = self.game_over_font.render("Game Over", True, ENEMY_COLOR)
         game_over_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 80))
         self.window.blit(game_over_text, game_over_rect.topleft)
         
-        # "Play Again" button
-        play_again_text = self.button_font.render("Play Again", True, BLACK)
-        play_again_rect = play_again_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
-        play_again_button = pygame.Rect(play_again_rect.left - 10, play_again_rect.top - 10, play_again_rect.width + 20, play_again_rect.height + 20)
-        
-        pygame.draw.rect(self.window, GREEN, play_again_button)
-        self.window.blit(play_again_text, play_again_rect.topleft)
-        
-        # "Main Menu" button
-        menu_text = self.button_font.render("Main Menu", True, BLACK)
-        menu_rect = menu_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 80))
-        menu_button = pygame.Rect(menu_rect.left - 10, menu_rect.top - 10, menu_rect.width + 20, menu_rect.height + 20)
-        
-        pygame.draw.rect(self.window, GREEN, menu_button)
-        self.window.blit(menu_text, menu_rect.topleft)
+        # Buttons
+        play_again_button = self.draw_button("Play Again", (WIDTH // 2, HEIGHT // 2 + 20))
+        menu_button = self.draw_button("Main Menu", (WIDTH // 2, HEIGHT // 2 + 80))
         
         pygame.display.flip()
         
@@ -352,7 +334,7 @@ class GameUI:
     
     def draw_high_scores_screen(self, top_scores):
         """Draw the high scores screen and return the back button rect."""
-        self.window.fill(LIGHT_BLUE)
+        self.window.fill(BG_COLOR)
         
         # Draw title
         title_text = self.title_font.render("High Scores", True, TEXT_COLOR)
@@ -373,12 +355,8 @@ class GameUI:
             self.window.blit(no_scores_text, no_scores_rect.topleft)
         
         # Draw back button
-        back_text = self.button_font.render("Back", True, BLACK)
-        back_rect = back_text.get_rect(center=(WIDTH // 2, HEIGHT - 50))
-        back_button = pygame.Rect(back_rect.left - 10, back_rect.top - 10, back_rect.width + 20, back_rect.height + 20)
+        back_button = self.draw_button("Back", (WIDTH // 2, HEIGHT - 50))
         
-        pygame.draw.rect(self.window, GREEN, back_button)
-        self.window.blit(back_text, back_rect.topleft)
         pygame.display.flip()
         
         return back_button
