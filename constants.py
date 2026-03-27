@@ -12,6 +12,7 @@ TEXT_COLOR = (220, 220, 200)  # Off-white
 PLAYER_COLOR = (50, 200, 100) # Bright green for contrast
 ENEMY_COLOR = (200, 50, 50)   # Red for alerts
 MISSILE_COLOR = (200, 150, 50) # Orange
+PURPLE = (128, 0, 128)        # Royal purple
 PAUSED_TEXT_COLOR = (100, 150, 100) # Lighter green
 BUTTON_COLOR = (0, 100, 60)
 BLACK = (0, 0, 0)
@@ -20,7 +21,7 @@ BLACK = (0, 0, 0)
 PLAYER_LIVES = 3
 PLAYER_WIDTH = 50
 PLAYER_HEIGHT = 30
-PLAYER_SPEED = 30  # Pixels per movement
+PLAYER_SPEED = 8  # Reduced speed for per-frame movement
 
 # Enemy settings
 NORMAL_ENEMY_WIDTH = 30
@@ -30,6 +31,10 @@ NORMAL_ENEMY_SPEED = 5
 MISSILE_WIDTH = 10
 MISSILE_HEIGHT = 45
 MISSILE_SPEED = 8
+
+TRIANGLE_WIDTH = 30
+TRIANGLE_HEIGHT = 30
+TRIANGLE_SPEED = 4
 
 # Spawning settings
 SPAWN_INTERVAL = 500  # Milliseconds between spawns

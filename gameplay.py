@@ -6,30 +6,27 @@ import pygame
 import random
 import json
 import os
+import math
 from constants import *
 
 
 # ---- GAME OBJECT CLASSES ----
 
-class GameObject:
+class GameObject(pygame.sprite.Sprite):
     """Base class for all game objects."""
     
     def __init__(self, x, y, width, height, color, speed=0):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        super().__init__()
+        self.image = pygame.Surface((width, height))
+        self.image.fill(color)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
         self.color = color
         self.speed = speed
     
-    def get_rect(self):
-        """Return pygame Rect for collision detection and rendering."""
-        return pygame.Rect(self.x, self.y, self.width, self.height)
-    
     def draw(self, surface):
         """Draw the object to the given surface."""
-        rect = self.get_rect()
-        pygame.draw.rect(surface, self.color, rect)
+        surface.blit(self.image, self.rect)
 
 
 class Player(GameObject):
@@ -46,11 +43,11 @@ class Player(GameObject):
     
     def move_left(self):
         """Move player left by PLAYER_SPEED pixels."""
-        self.x = max(0, self.x - PLAYER_SPEED)
+        self.rect.x = max(0, self.rect.x - PLAYER_SPEED)
     
     def move_right(self):
         """Move player right by PLAYER_SPEED pixels."""
-        self.x = min(WIDTH - self.width, self.x + PLAYER_SPEED)
+        self.rect.x = min(WIDTH - self.rect.width, self.rect.x + PLAYER_SPEED)
     
     def take_damage(self):
         """Reduce lives by 1. Returns True if player still has lives."""
@@ -59,8 +56,7 @@ class Player(GameObject):
     
     def reset(self):
         """Reset player to starting position and lives."""
-        self.x = (WIDTH - PLAYER_WIDTH) // 2
-        self.y = HEIGHT - PLAYER_HEIGHT - 50
+        self.rect.topleft = ((WIDTH - PLAYER_WIDTH) // 2, HEIGHT - PLAYER_HEIGHT - 50)
         self.lives = PLAYER_LIVES
 
 
@@ -85,11 +81,39 @@ class Enemy(GameObject):
     
     def update(self):
         """Move enemy down by its speed."""
-        self.y += self.speed
+        self.rect.y += self.speed
     
     def is_off_screen(self):
         """Check if enemy has fallen off the bottom of the screen."""
-        return self.y > HEIGHT
+        return self.rect.y > HEIGHT
+
+
+class ZigZagTriangle(GameObject):
+    """Purple triangle that moves down and zig-zags."""
+    def __init__(self, x, y):
+        super().__init__(x, y, TRIANGLE_WIDTH, TRIANGLE_HEIGHT, PURPLE, TRIANGLE_SPEED)
+        self.initial_x = x
+        self.color = PURPLE
+
+    def update(self):
+        """Move triangle down and zig-zag."""
+        self.rect.y += self.speed
+        # Zig-zag movement
+        self.rect.x = self.initial_x + math.sin(self.rect.y / 20) * 20
+
+    def is_off_screen(self):
+        """Check if triangle has fallen off the bottom of the screen."""
+        return self.rect.y > HEIGHT
+
+    def draw(self, surface):
+        """Draw the triangle."""
+        # Calculate points for a triangle: top-middle, bottom-left, bottom-right
+        points = [
+            (self.rect.centerx, self.rect.top),
+            (self.rect.left, self.rect.bottom),
+            (self.rect.right, self.rect.bottom)
+        ]
+        pygame.draw.polygon(surface, self.color, points)
 
 
 # ---- GAME STATE CLASS ----
@@ -99,13 +123,14 @@ class GameState:
     
     def __init__(self, player):
         self.player = player
-        self.falling_objects = []
+        self.falling_objects = pygame.sprite.Group()
         self.paused = False
         
         # Timing variables
         self.start_ticks = pygame.time.get_ticks()
         self.pause_start_ticks = 0
         self.spawn_timer = pygame.time.get_ticks()
+        self.triangle_spawn_timer = pygame.time.get_ticks() # Added
         
         # Calculate zones for spawning
         self.zone_width = WIDTH // ZONE_DIVISIONS
@@ -117,11 +142,12 @@ class GameState:
     
     def reset(self):
         """Reset all game state for a new game."""
-        self.falling_objects = []
+        self.falling_objects = pygame.sprite.Group()
         self.paused = False
         self.start_ticks = pygame.time.get_ticks()
         self.pause_start_ticks = 0
         self.spawn_timer = pygame.time.get_ticks()
+        self.triangle_spawn_timer = pygame.time.get_ticks() # Added
         self.player.reset()
     
     def pause(self):
@@ -148,7 +174,13 @@ class GameState:
         zone = random.choice(self.zones)
         x = random.randint(zone[0], zone[1] - (MISSILE_WIDTH if enemy_type == 'missile' else NORMAL_ENEMY_WIDTH))
         enemy = Enemy(x, -45 if enemy_type == 'missile' else -15, enemy_type)
-        self.falling_objects.append(enemy)
+        self.falling_objects.add(enemy)
+        
+    def spawn_triangle(self):
+        """Spawn a triangle."""
+        x = random.randint(0, WIDTH - TRIANGLE_WIDTH)
+        triangle = ZigZagTriangle(x, -TRIANGLE_HEIGHT)
+        self.falling_objects.add(triangle)
     
     def spawn_random_enemy(self):
         """Spawn a random enemy based on spawn chances."""
@@ -159,10 +191,10 @@ class GameState:
     
     def update_enemies(self):
         """Update all falling enemies and remove off-screen ones."""
-        for enemy in self.falling_objects[:]:
-            enemy.update()
+        self.falling_objects.update()
+        for enemy in self.falling_objects:
             if enemy.is_off_screen():
-                self.falling_objects.remove(enemy)
+                enemy.kill()
     
     def get_elapsed_seconds(self):
         """Get elapsed game time in seconds (excluding paused time)."""
@@ -173,10 +205,19 @@ class GameState:
         """Check if it's time to spawn a new enemy."""
         current_ticks = pygame.time.get_ticks()
         return (current_ticks - self.spawn_timer) > SPAWN_INTERVAL
-    
+
+    def should_spawn_triangle(self):
+        """Check if it's time to spawn a new triangle."""
+        current_ticks = pygame.time.get_ticks()
+        return (current_ticks - self.triangle_spawn_timer) > 8000 # 8 seconds
+
     def update_spawn_timer(self):
         """Reset the spawn timer."""
         self.spawn_timer = pygame.time.get_ticks()
+        
+    def update_triangle_spawn_timer(self):
+        """Reset the triangle spawn timer."""
+        self.triangle_spawn_timer = pygame.time.get_ticks()
 
 
 # ---- HIGH SCORE MANAGEMENT ----
@@ -234,6 +275,7 @@ class GameUI:
     
     def __init__(self, window):
         self.window = window
+        self.text_cache = {}
         self._init_fonts()
     
     def _init_fonts(self):
@@ -249,6 +291,7 @@ class GameUI:
 
     def draw_button(self, text, center_pos):
         """Helper to draw a standardized button."""
+        # Use cache for buttons if needed, but text is dynamic, so maybe not worth it
         button_text = self.button_font.render(text, True, TEXT_COLOR)
         button_rect_text = button_text.get_rect(center=center_pos)
         button_padding = 10
@@ -297,12 +340,17 @@ class GameUI:
         self.window.blit(game_title, (title_x, title_y))
         
         # Draw lives
-        lives_text = self.stats_font.render(f"Lives: {game_state.player.lives}", True, TEXT_COLOR)
-        self.window.blit(lives_text, (10, 10))
+        lives_key = f"lives_{game_state.player.lives}"
+        if lives_key not in self.text_cache:
+            self.text_cache[lives_key] = self.stats_font.render(f"Lives: {game_state.player.lives}", True, TEXT_COLOR)
+        self.window.blit(self.text_cache[lives_key], (10, 10))
         
         # Draw timer
         elapsed_seconds = game_state.get_elapsed_seconds()
-        timer_surface = self.timer_font.render(f"Sec: {elapsed_seconds:05}", True, TEXT_COLOR)
+        timer_key = f"timer_{elapsed_seconds}"
+        if timer_key not in self.text_cache:
+            self.text_cache[timer_key] = self.timer_font.render(f"Sec: {elapsed_seconds:05}", True, TEXT_COLOR)
+        timer_surface = self.text_cache[timer_key]
         timer_x = WIDTH - timer_surface.get_width() - 10
         timer_y = HEIGHT - timer_surface.get_height() - 10
         self.window.blit(timer_surface, (timer_x, timer_y))
@@ -462,39 +510,41 @@ class GameLoop:
                     return False
                 
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        player.move_left()
-                    elif event.key == pygame.K_RIGHT:
-                        player.move_right()
-                    elif event.key == pygame.K_p:
+                    if event.key == pygame.K_p:
                         game_state.toggle_pause()
             
             # Update game only if not paused
             if not game_state.paused:
+                # Continuous movement
+                keys = pygame.key.get_pressed()
+                if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                    player.move_left()
+                if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                    player.move_right()
+                
                 # Spawn new enemies
                 if game_state.should_spawn():
                     game_state.spawn_random_enemy()
                     game_state.update_spawn_timer()
                 
+                if game_state.should_spawn_triangle():
+                    game_state.spawn_triangle()
+                    game_state.update_triangle_spawn_timer()
+                
                 # Update all enemies
                 game_state.update_enemies()
                 
                 # Check collisions
-                player_rect = player.get_rect()
-                for enemy in game_state.falling_objects[:]:
-                    enemy_rect = enemy.get_rect()
-                    if player_rect.colliderect(enemy_rect):
-                        # Handle collision
-                        if not player.take_damage():
-                            # Player is out of lives
-                            running = False
-                        
-                        # Remove hit enemy
-                        game_state.falling_objects.remove(enemy)
-                        
-                        # Spawn replacement
-                        if running:  # Only spawn if game continues
-                            game_state.spawn_random_enemy()
+                hits = pygame.sprite.spritecollide(player, game_state.falling_objects, True)
+                for enemy in hits:
+                    # Handle collision
+                    if not player.take_damage():
+                        # Player is out of lives
+                        running = False
+                    
+                    # Spawn replacement
+                    if running:  # Only spawn if game continues
+                        game_state.spawn_random_enemy()
             
             # Draw game
             if game_state.paused:

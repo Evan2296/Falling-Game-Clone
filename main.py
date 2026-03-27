@@ -14,7 +14,7 @@ Controls:
 import pygame
 import sys
 from constants import WIDTH, HEIGHT, FPS
-from game import GameLoop
+from gameplay import GameLoop
 
 
 def main():
