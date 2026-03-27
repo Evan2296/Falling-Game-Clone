@@ -4,24 +4,23 @@
 WIDTH = 600
 HEIGHT = 400
 
-# Colors (RGB tuples)
-# Dark Evergreen/Black Theme
-BG_COLOR = (0, 0, 0)
-EVERGREEN = (0, 80, 50)
-TEXT_COLOR = (220, 220, 200)  # Off-white
-PLAYER_COLOR = (50, 200, 100) # Bright green for contrast
-ENEMY_COLOR = (200, 50, 50)   # Red for alerts
-MISSILE_COLOR = (200, 150, 50) # Orange
-PURPLE = (128, 0, 128)        # Royal purple
-PAUSED_TEXT_COLOR = (100, 150, 100) # Lighter green
-BUTTON_COLOR = (0, 100, 60)
+# Colors (Sacura Pink Theme)
+# Soft pastel pink palette
+BG_COLOR = (255, 229, 218)  # Soft pink background
+TEXT_COLOR = (255, 105, 180)  # Coral pink text
+PLAYER_COLOR = (210, 150, 225)  # Lilac player
+ENEMY_COLOR = (255, 128, 144)  # Rose enemy
+MISSILE_COLOR = (245, 130, 238)  # Pastel pink missile
+PURPLE = (220, 100, 210)  # Rose purple accent
+PAUSED_TEXT_COLOR = (220, 150, 230)  # Soft pink pause text
+BUTTON_COLOR = (255, 182, 175)  # Pink button accent
 BLACK = (0, 0, 0)
 
 # Game settings
 PLAYER_LIVES = 3
 PLAYER_WIDTH = 50
 PLAYER_HEIGHT = 30
-PLAYER_SPEED = 8  # Reduced speed for per-frame movement
+PLAYER_SPEED = 8
 
 # Enemy settings
 NORMAL_ENEMY_WIDTH = 30
@@ -37,12 +36,12 @@ TRIANGLE_HEIGHT = 30
 TRIANGLE_SPEED = 4
 
 # Spawning settings
-SPAWN_INTERVAL = 500  # Milliseconds between spawns
-NORMAL_SPAWN_CHANCE = 0.75  # 75% chance to spawn normal enemy
-MISSILE_SPAWN_CHANCE = 0.25  # 25% chance to spawn missile
+SPAWN_INTERVAL = 500
+NORMAL_SPAWN_CHANCE = 0.75
+MISSILE_SPAWN_CHANCE = 0.25
 
 # Zone settings
-ZONE_DIVISIONS = 3  # Divide screen into 3 vertical zones
+ZONE_DIVISIONS = 3
 
 # Frame rate
 FPS = 60
